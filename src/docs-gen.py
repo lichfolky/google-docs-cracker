@@ -153,6 +153,39 @@ def create_folder(drive_service, name):
     return drive_response.get("id")
 
 
+# Create a new root folder
+def create_new_folder(drive_service, parent_folder_id, name):
+    file_metadata = {
+        "name": name,
+        "parents": [parent_folder_id],
+        "mimeType": "application/vnd.google-apps.folder",
+    }
+    drive_response = (
+        drive_service.files().create(body=file_metadata, fields="id").execute()
+    )
+    return drive_response.get("id")
+
+
+# Replace text in a document
+def replace_text(docs_service, document_id, keys, contents):
+    requests = []
+    for count, key in enumerate(keys):
+        requests.push(
+            {
+                "replaceAllText": {
+                    "containsText": {"text": "{{" + key + "}}", "matchCase": "true"},
+                    "replaceText": contents[count],
+                }
+            }
+        )
+
+    docs_response = (
+        docs_service.documents()
+        .batchUpdate(documentId=document_id, body={"requests": requests})
+        .execute()
+    )
+
+
 # Replace text in a document
 def replace_text_1(docs_service, document_id, project_rows):
 

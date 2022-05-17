@@ -1,6 +1,6 @@
 ## Python setup on mac
 
-[https://www.freecodecamp.org/news/python-version-on-mac-update/]
+https://www.freecodecamp.org/news/python-version-on-mac-update/
 
 `pyenv install 3.10.4`
 `pyenv global 3.10.4`

@@ -1,8 +1,8 @@
 # Google Docs Cracker
 
-Experiments with google cloud api and python
-The `docs-gen.py script` create a doc for each row of a sheet in a new folder,
-using a document as template and substituting keywords with the row contents.
+Experiments with google cloud api and python.  
+The `docs-gen.py script` create a doc in a new folder, for each row of a sheet,
+using another document as template and substituting keywords with the row contents.
 
 ## Setup
 
@@ -10,7 +10,6 @@ using a document as template and substituting keywords with the row contents.
 
 ```
   pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
-
 ```
 
 ### Setup a Google Cloud Platform project
@@ -23,7 +22,7 @@ using a document as template and substituting keywords with the row contents.
 
 ### Use the apis
 
-- If you need to use a file copy it's id from the file url
+- If you need to use a doc or a sheet, copy its id from the preview url
 
 [Google sheets](https://developers.google.com/sheets/api/guides/concepts)  
 [Google docs](https://developers.google.com/docs/api/how-tos/overview)  
