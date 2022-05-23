@@ -30,6 +30,7 @@ with open(CONFIG_PATH) as json_data_file:
 
 SAMPLE_RANGE_NAME = "avvii 25.05.22!A:P"
 FOLDER_NAME = "Schede avvio"
+PARENT_FOLDER_ID = "1RSM9Fgq2u12PHclaSqVyHtRJU57i3VpL"
 
 
 def main():
@@ -53,16 +54,38 @@ def main():
         sheet_service = build("sheets", "v4", credentials=creds)
         drive_service = build("drive", "v3", credentials=creds)
         docs_service = build("docs", "v1", credentials=creds)
-        folder_id = create_folder(drive_service, FOLDER_NAME)
+
+        main_folder_id = create_folder(drive_service, PARENT_FOLDER_ID, FOLDER_NAME)
+
         data_rows = load_sheet_values(
             sheet_service, cfg["SPREADSHEET_ID"], SAMPLE_RANGE_NAME
         )
 
         for index, row in enumerate(data_rows):
             if index > 0:
+                if index == 1:
+                    progetto = row[4]
+                    sede = row[5]
+                    progetto_folder_id = create_folder(
+                        drive_service, main_folder_id, progetto
+                    )
+                    sede_folder_id = create_folder(
+                        drive_service, progetto_folder_id, sede
+                    )
+                if progetto != row[4]:
+                    progetto = row[4]
+                    progetto_folder_id = create_folder(
+                        drive_service, main_folder_id, progetto
+                    )
+                if sede != row[5]:
+                    sede = row[5]
+                    sede_folder_id = create_folder(
+                        drive_service, progetto_folder_id, sede
+                    )
+                print(progetto + " " + sede + ": " + row[1] + " " + row[2])
                 doc_id = create_doc_from_template(
                     drive_service,
-                    folder_id,
+                    sede_folder_id,
                     cfg["TEMPLATE_DOCUMENT_ID"],
                     row[1] + "_" + row[2],
                 )
@@ -83,6 +106,7 @@ def main():
                         "elenco",
                     ],
                     [
+                        row[1],
                         row[2],
                         row[3],
                         row[4],
@@ -93,62 +117,68 @@ def main():
                         row[9],
                         row[10],
                         row[11],
-                        row[12],
                     ],
                 )
 
     except HttpError as err:
         print(err)
 
-    # Create a new root folder
-    def create_folder(drive_service, name):
-        file_metadata = {"name": name, "mimeType": "application/vnd.google-apps.folder"}
-        drive_response = (
-            drive_service.files().create(body=file_metadata, fields="id").execute()
-        )
-        return drive_response.get("id")
 
-    # Call the Sheets API and load range values
-    def load_sheet_values(sheet_service, spreadsheet_id, range):
-        sheet = sheet_service.spreadsheets()
-        result = sheet.values().get(spreadsheetId=spreadsheet_id, range=range).execute()
-        values = result.get("values", [])
+# Create a new root folder
+def create_folder(drive_service, parent_folder, name):
+    file_metadata = {
+        "name": name,
+        "mimeType": "application/vnd.google-apps.folder",
+        "parents": [parent_folder],
+    }
 
-        if not values:
-            print("No data found.")
-            return
+    drive_response = (
+        drive_service.files().create(body=file_metadata, fields="id").execute()
+    )
+    return drive_response.get("id")
 
-        return values
 
-    # Create a new doc from a template
-    def create_doc_from_template(drive_service, folder_id, template_id, name):
-        body = {"name": name, "parents": [folder_id]}
-        drive_response = (
-            drive_service.files().copy(fileId=template_id, body=body).execute()
-        )
-        return drive_response.get("id")
+# Call the Sheets API and load range values
+def load_sheet_values(sheet_service, spreadsheet_id, range):
+    sheet = sheet_service.spreadsheets()
+    result = sheet.values().get(spreadsheetId=spreadsheet_id, range=range).execute()
+    values = result.get("values", [])
 
-    # Replace text in a document
-    def replace_text(docs_service, document_id, keys, contents):
-        requests = []
-        for count, key in enumerate(keys):
-            requests.push(
-                {
-                    "replaceAllText": {
-                        "containsText": {
-                            "text": "{{" + key + "}}",
-                            "matchCase": "true",
-                        },
-                        "replaceText": contents[count],
-                    }
+    if not values:
+        print("No data found.")
+        return
+
+    return values
+
+
+# Create a new doc from a template
+def create_doc_from_template(drive_service, folder_id, template_id, name):
+    body = {"name": name, "parents": [folder_id]}
+    drive_response = drive_service.files().copy(fileId=template_id, body=body).execute()
+    return drive_response.get("id")
+
+
+# Replace text in a document
+def replace_text(docs_service, document_id, keys, contents):
+    requests = []
+    for count, key in enumerate(keys):
+        requests.append(
+            {
+                "replaceAllText": {
+                    "containsText": {
+                        "text": "{{" + key + "}}",
+                        "matchCase": "true",
+                    },
+                    "replaceText": contents[count],
                 }
-            )
-
-        docs_response = (
-            docs_service.documents()
-            .batchUpdate(documentId=document_id, body={"requests": requests})
-            .execute()
+            }
         )
+
+    docs_response = (
+        docs_service.documents()
+        .batchUpdate(documentId=document_id, body={"requests": requests})
+        .execute()
+    )
 
 
 if __name__ == "__main__":
