@@ -82,12 +82,14 @@ def main():
                     sede_folder_id = create_folder(
                         drive_service, progetto_folder_id, sede
                     )
-                print(progetto + " " + sede + ": " + row[1] + " " + row[2])
+                print(
+                    progetto + " " + sede + ": " + row[2].upper() + " " + row[1].upper()
+                )
                 doc_id = create_doc_from_template(
                     drive_service,
                     sede_folder_id,
                     cfg["TEMPLATE_DOCUMENT_ID"],
-                    row[1] + "_" + row[2],
+                    row[2].upper() + "_" + row[1].upper(),
                 )
                 replace_text(
                     docs_service,
@@ -106,8 +108,8 @@ def main():
                         "elenco",
                     ],
                     [
-                        row[1],
-                        row[2],
+                        row[1].upper(),
+                        row[2].upper(),
                         row[3],
                         row[4],
                         row[5],
